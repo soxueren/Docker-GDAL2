@@ -37,10 +37,29 @@ RUN apt-get update -y && apt-get install -y \
     libhdf5-serial-dev \
     wget
 
+# openjdk
+COPY --from=openjdk:8  /usr/lib/jvm/java-1.8-openjdk/ /usr/lib/jvm/java-1.8-openjdk/
+ENV LANG=C.UTF-8
+ENV JAVA_HOME=/usr/lib/jvm/java-1.8-openjdk
+ENV PATH=$PATH:/usr/lib/jvm/java-1.8-openjdk/jre/bin:/usr/lib/jvm/java-1.8-openjdk/bin
+ENV JAVA_VERSION=8u212
+ENV JAVA_ALPINE_VERSION=8.212.04-r0
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH://usr/lib:/usr/lib/jvm/java-1.8-openjdk/jre/lib/amd64/server
+
+# Jackcess for mdb
+RUN wget -O /usr/lib/jvm/java-1.8-openjdk/jre/lib/ext/jackcess-1.2.8.jar  \
+	https://repo1.maven.org/maven2/com/healthmarketscience/jackcess/jackcess/1.2.8/jackcess-1.2.8.jar
+RUN wget -O /usr/lib/jvm/java-1.8-openjdk/jre/lib/ext/commons-lang-2.4.jar  \
+    https://repo1.maven.org/maven2/commons-lang/commons-lang/2.4/commons-lang-2.4.jar
+RUN wget -O /usr/lib/jvm/java-1.8-openjdk/jre/lib/ext/commons-logging-1.1.1.jar  \
+    https://repo1.maven.org/maven2/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar
+
 # Compile and install GDAL
 
 RUN cd src && tar -xvf gdal-${GDAL_VERSION}.tar.gz && cd gdal-${GDAL_VERSION} \
     && ./configure --with-python --with-spatialite --with-pg --with-curl \
+    --with-java=/usr/lib/jvm/java-1.8-openjdk --with-jvm-lib=/usr/lib/jvm/java-1.8-openjdk/jre/lib/amd64/server --with-mdb=yes  \
+    --with-jvm-lib-add-rpath=/usr/lib/jvm/java-1.8-openjdk/jre/lib/amd64/server \
     && make && make install && ldconfig \
     && apt-get update -y \
     && apt-get remove -y --purge build-essential wget \
